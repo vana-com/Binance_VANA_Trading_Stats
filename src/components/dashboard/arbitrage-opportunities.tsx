@@ -1,11 +1,9 @@
-import { useState, useMemo } from 'react';
-import type { FC } from 'react';
+import type { FC, ReactNode } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Label } from "@/components/ui/label";
 import type { PairArbitrage, TriangularArbitrage } from "@/types";
 import { formatSymbol } from '@/lib/utils';
+import { ArrowDown, ArrowUp } from 'lucide-react';
 
 interface ArbitrageOpportunitiesProps {
   pairOps: PairArbitrage[];
@@ -13,110 +11,76 @@ interface ArbitrageOpportunitiesProps {
 }
 
 const formatPercent = (value: number) => {
-    return `${(value * 100).toFixed(4)}%`;
+    const isNegative = value < 0;
+    const sign = isNegative ? "" : "+";
+    return `${sign}${(value * 100).toFixed(4)}%`;
 }
 
-const THRESHOLDS = {
-    'low': 0.001,  // 0.1%
-    'med': 0.0025, // 0.25%
-    'high': 0.005  // 0.5%
-};
+const getBestOpportunity = <T extends { spread: number } | { profit: number }>(ops: T[]): T | null => {
+    if (!ops || ops.length === 0) return null;
+    return ops.reduce((best, current) => {
+        const bestValue = 'spread' in best ? best.spread : best.profit;
+        const currentValue = 'spread' in current ? current.spread : current.profit;
+        return currentValue > bestValue ? current : best;
+    }, ops[0]);
+}
+
+const OpportunityRow: FC<{ title: string; children: ReactNode }> = ({ title, children }) => (
+    <div className="flex items-center justify-between p-3 rounded-lg bg-card border">
+        <span className="font-medium text-sm text-muted-foreground">{title}</span>
+        {children}
+    </div>
+);
 
 const ArbitrageOpportunities: FC<ArbitrageOpportunitiesProps> = ({ pairOps, triangularOps }) => {
-  const [thresholdKey, setThresholdKey] = useState<keyof typeof THRESHOLDS>('med');
+    const bestPairOp = getBestOpportunity(pairOps);
+    const bestTriangularOp = getBestOpportunity(triangularOps);
 
-  const filteredPairOps = useMemo(() => 
-    pairOps.filter(op => op.spread > THRESHOLDS[thresholdKey]),
-    [pairOps, thresholdKey]
-  );
-
-  const filteredTriangularOps = useMemo(() =>
-    triangularOps.filter(op => op.profit > THRESHOLDS[thresholdKey]),
-    [triangularOps, thresholdKey]
-  );
-  
-  const hasPairOps = filteredPairOps.length > 0;
-  const hasTriangularOps = filteredTriangularOps.length > 0;
-
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Arbitrage Watch</CardTitle>
-        <CardDescription>Calculated opportunities exceeding selected threshold.</CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="flex flex-col space-y-2">
-            <Label className="text-sm font-medium">Profit Threshold</Label>
-            <RadioGroup
-                defaultValue="med"
-                onValueChange={(value) => setThresholdKey(value as keyof typeof THRESHOLDS)}
-                className="flex items-center space-x-4"
-            >
-                <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="low" id="low" />
-                    <Label htmlFor="low">0.1%</Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="med" id="med" />
-                    <Label htmlFor="med">0.25%</Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="high" id="high" />
-                    <Label htmlFor="high">0.5%</Label>
-                </div>
-            </RadioGroup>
-        </div>
-
-        {hasPairOps && (
-            <div>
-                <h4 className="font-semibold mb-2">Pair Arbitrage</h4>
-                 <Table>
-                    <TableHeader>
-                        <TableRow>
-                            <TableHead>Pair</TableHead>
-                            <TableHead className="text-right">Spread</TableHead>
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                        {filteredPairOps.map((op, index) => (
-                            <TableRow key={index}>
-                                <TableCell>{op.pair.map(formatSymbol).join(' / ')}</TableCell>
-                                <TableCell className="text-right font-mono text-accent">{formatPercent(op.spread)}</TableCell>
-                            </TableRow>
-                        ))}
-                    </TableBody>
-                </Table>
+    const renderValue = (value: number) => {
+        const isProfitable = value > 0;
+        return (
+            <div className={`flex items-center font-mono text-sm ${isProfitable ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
+                {isProfitable ? <ArrowUp className="h-4 w-4 mr-1" /> : <ArrowDown className="h-4 w-4 mr-1" />}
+                {formatPercent(value)}
             </div>
-        )}
+        );
+    };
 
-        {hasTriangularOps && (
-            <div>
-                <h4 className="font-semibold mb-2">Triangular Arbitrage</h4>
-                <Table>
-                    <TableHeader>
-                        <TableRow>
-                            <TableHead>Path</TableHead>
-                            <TableHead className="text-right">Profit</TableHead>
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                        {filteredTriangularOps.map((op, index) => (
-                            <TableRow key={index}>
-                                <TableCell>{op.path.join(' → ')}</TableCell>
-                                <TableCell className="text-right font-mono text-accent">{formatPercent(op.profit)}</TableCell>
-                            </TableRow>
-                        ))}
-                    </TableBody>
-                </Table>
-            </div>
-        )}
-        
-        {!hasPairOps && !hasTriangularOps && (
-          <p className="text-sm text-muted-foreground text-center py-4">No significant arbitrage opportunities detected for this threshold.</p>
-        )}
-      </CardContent>
-    </Card>
-  );
+    return (
+        <Card>
+            <CardHeader>
+                <CardTitle>Arbitrage Watch</CardTitle>
+                <CardDescription>Most profitable opportunities found, net of fees.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-3">
+                {bestPairOp ? (
+                    <OpportunityRow title="Best Pair">
+                        <div className="text-right">
+                            <p className="font-semibold">{bestPairOp.pair.map(formatSymbol).join(' / ')}</p>
+                            {renderValue(bestPairOp.spread)}
+                        </div>
+                    </OpportunityRow>
+                ) : (
+                    <OpportunityRow title="Best Pair">
+                        <p className="text-sm text-muted-foreground">None found</p>
+                    </OpportunityRow>
+                )}
+
+                {bestTriangularOp ? (
+                     <OpportunityRow title="Best Triangular">
+                        <div className="text-right">
+                            <p className="font-semibold">{bestTriangularOp.path.join(' → ')}</p>
+                            {renderValue(bestTriangularOp.profit)}
+                        </div>
+                    </OpportunityRow>
+                ) : (
+                    <OpportunityRow title="Best Triangular">
+                        <p className="text-sm text-muted-foreground">None found</p>
+                    </OpportunityRow>
+                )}
+            </CardContent>
+        </Card>
+    );
 };
 
 export default ArbitrageOpportunities;
