@@ -6,8 +6,8 @@ const DEPTH_LIMIT = 20;
 const DEPTH_BAND_PERCENT = 0.02; // ±2%
 const LOW_LIQUIDITY_THRESHOLD = 60000; // $60,000
 const TAKER_FEE = 0.001; // 0.1%
-const PAIR_ARBITRAGE_THRESHOLD = 0.0025; // 0.25%
-const TRIANGULAR_ARBITRAGE_THRESHOLD = 0.0025; // 0.25%
+const PAIR_ARBITRAGE_THRESHOLD = 0; // 0% - Return all, filter on client
+const TRIANGULAR_ARBITRAGE_THRESHOLD = 0; // 0% - Return all, filter on client
 
 async function fetchData<T>(endpoint: string): Promise<T> {
   try {
