@@ -5,6 +5,7 @@ import type { FC } from 'react';
 import { Bar, BarChart, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer, ReferenceArea, CartesianGrid, Label } from 'recharts';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import type { LiquidityData } from '@/types';
+import { formatCurrency } from '@/lib/utils';
 
 interface DepthChartProps {
   data: LiquidityData;
@@ -23,14 +24,24 @@ const DepthChart: FC<DepthChartProps> = ({ data }) => {
 
     const CustomTooltip = ({ active, payload, label }: any) => {
       if (active && payload && payload.length) {
+        const price = label;
         return (
-          <div className="bg-background/80 backdrop-blur-sm p-2 border rounded-md shadow-lg">
-            <p className="label font-bold">{`Price: ${label.toLocaleString(undefined, {minimumFractionDigits: 4})}`}</p>
-            {payload.map((pld: any) => (
-                 <p key={pld.dataKey} style={{ color: pld.color }}>
-                    {`${pld.dataKey.charAt(0).toUpperCase() + pld.dataKey.slice(1)} Volume (VANA): ${pld.value.toLocaleString()}`}
-                </p>
-            ))}
+          <div className="bg-background/80 backdrop-blur-sm p-2 border rounded-md shadow-lg text-sm">
+            <p className="label font-bold mb-2">{`Price: $${price.toLocaleString(undefined, {minimumFractionDigits: 4, maximumFractionDigits: 4})}`}</p>
+            {payload.map((pld: any) => {
+                const volumeVana = pld.value;
+                const volumeUsd = price * volumeVana;
+                return (
+                    <div key={pld.dataKey} className="mb-1">
+                        <p style={{ color: pld.color }}>
+                            {`${pld.dataKey.charAt(0).toUpperCase() + pld.dataKey.slice(1)} Volume (VANA): ${volumeVana.toLocaleString()}`}
+                        </p>
+                        <p className="text-muted-foreground text-xs pl-2">
+                           {`≈ ${formatCurrency(volumeUsd)}`}
+                        </p>
+                    </div>
+                )
+            })}
           </div>
         );
       }
