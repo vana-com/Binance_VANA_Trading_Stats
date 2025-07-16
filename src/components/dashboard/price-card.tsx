@@ -15,7 +15,7 @@ const PriceCard: FC<PriceCardProps> = ({ symbol, price }) => {
       </CardHeader>
       <CardContent>
         <div className="text-2xl font-bold">
-            {price.toLocaleString(undefined, {
+            ${price.toLocaleString(undefined, {
                 minimumFractionDigits: 4,
                 maximumFractionDigits: 4
             })}
