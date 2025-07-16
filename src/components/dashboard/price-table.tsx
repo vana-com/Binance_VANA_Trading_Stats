@@ -18,7 +18,7 @@ const PriceTable: FC<PriceTableProps> = ({ data }) => {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Current Prices</CardTitle>
+        <CardTitle>All Prices</CardTitle>
       </CardHeader>
       <CardContent>
         <Table>

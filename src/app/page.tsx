@@ -9,6 +9,7 @@ import { useToast } from "@/hooks/use-toast";
 import type { DashboardData } from "@/types";
 import { refreshData } from "@/app/actions";
 
+import PriceCard from "@/components/dashboard/price-card";
 import PriceTable from "@/components/dashboard/price-table";
 import LiquidityCard from "@/components/dashboard/liquidity-card";
 import ArbitrageOpportunities from "@/components/dashboard/arbitrage-opportunities";
@@ -46,9 +47,9 @@ export default function Home() {
   const renderSkeletons = () => (
     <div className="space-y-8">
       <div className="grid gap-6 md:grid-cols-3">
-        <Skeleton className="h-40 w-full" />
-        <Skeleton className="h-40 w-full" />
-        <Skeleton className="h-40 w-full" />
+        <Skeleton className="h-28 w-full" />
+        <Skeleton className="h-28 w-full" />
+        <Skeleton className="h-28 w-full" />
       </div>
       <div className="grid gap-6 lg:grid-cols-3">
         <Card className="lg:col-span-2">
@@ -88,6 +89,12 @@ export default function Home() {
           <div className="space-y-8">
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
               {data.liquidityData.map((item) => (
+                <PriceCard key={item.symbol} symbol={item.symbol} price={item.price} />
+              ))}
+            </div>
+
+            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+              {data.liquidityData.map((item) => (
                 <LiquidityCard key={item.symbol} data={item} />
               ))}
             </div>
@@ -113,7 +120,6 @@ export default function Home() {
                   pairOps={data.pairArbitrage} 
                   triangularOps={data.triangularArbitrage} 
                 />
-                <PriceTable data={data.liquidityData} />
               </div>
             </div>
           </div>
