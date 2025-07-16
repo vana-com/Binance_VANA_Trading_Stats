@@ -3,6 +3,28 @@ export type BinancePrice = {
   price: string;
 };
 
+export type Binance24hrTicker = {
+    symbol: string;
+    priceChange: string;
+    priceChangePercent: string;
+    weightedAvgPrice: string;
+    prevClosePrice: string;
+    lastPrice: string;
+    lastQty: string;
+    bidPrice: string;
+    askPrice: string;
+    openPrice: string;
+    highPrice: string;
+    lowPrice: string;
+    volume: string;
+    quoteVolume: string;
+    openTime: number;
+    closeTime: number;
+    firstId: number;
+    lastId: number;
+    count: number;
+}
+
 export type BinanceDepth = {
   lastUpdateId: number;
   bids: [string, string][]; // [price, quantity]
@@ -18,6 +40,7 @@ export type OrderBookLevel = {
 export type LiquidityData = {
   symbol: string;
   price: number;
+  quoteVolume: number;
   midPrice: number;
   depthUSD: {
     bids: number;

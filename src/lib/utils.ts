@@ -12,3 +12,12 @@ export function formatSymbol(symbol: string): string {
   }
   return symbol;
 }
+
+export function formatCurrency(value: number): string {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
+      notation: 'compact',
+      compactDisplay: 'short',
+    }).format(value);
+}

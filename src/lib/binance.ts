@@ -1,4 +1,4 @@
-import type { BinancePrice, BinanceDepth, DashboardData, LiquidityData, PairArbitrage, TriangularArbitrage, OrderBookLevel } from "@/types";
+import type { BinancePrice, BinanceDepth, DashboardData, LiquidityData, PairArbitrage, TriangularArbitrage, OrderBookLevel, Binance24hrTicker } from "@/types";
 
 const SYMBOLS = ['VANAUSDT', 'VANAUSDC', 'VANAFDUSD'];
 const API_BASE = 'https://api.binance.com/api/v3';
@@ -29,6 +29,8 @@ async function fetchData<T>(endpoint: string): Promise<T> {
 
 const getPrice = (symbol: string) => fetchData<BinancePrice>(`/ticker/price?symbol=${symbol}`);
 const getDepth = (symbol: string) => fetchData<BinanceDepth>(`/depth?symbol=${symbol}&limit=${DEPTH_LIMIT}`);
+const get24hrTicker = (symbol: string) => fetchData<Binance24hrTicker>(`/ticker/24hr?symbol=${symbol}`);
+
 
 function processOrderBook(orders: [string, string][], isBids: boolean): OrderBookLevel[] {
     const processed = orders.map(([price, size]) => ({
@@ -50,15 +52,21 @@ function processOrderBook(orders: [string, string][], isBids: boolean): OrderBoo
 export async function getDashboardData(): Promise<DashboardData> {
   const pricePromises = SYMBOLS.map(getPrice);
   const depthPromises = SYMBOLS.map(getDepth);
+  const tickerPromises = SYMBOLS.map(get24hrTicker);
 
-  const allPrices = await Promise.all(pricePromises);
-  const allDepths = await Promise.all(depthPromises);
+  const [allPrices, allDepths, allTickers] = await Promise.all([
+    Promise.all(pricePromises),
+    Promise.all(depthPromises),
+    Promise.all(tickerPromises),
+  ]);
 
   const priceMap = new Map(allPrices.map(p => [p.symbol, parseFloat(p.price)]));
+  const tickerMap = new Map(allTickers.map(t => [t.symbol, t]));
 
   // 1. Process Liquidity and Depth
   const liquidityData: LiquidityData[] = SYMBOLS.map((symbol, index) => {
     const depth = allDepths[index];
+    const ticker = tickerMap.get(symbol);
     const price = priceMap.get(symbol) ?? 0;
     
     const bids = processOrderBook(depth.bids, true);
@@ -79,6 +87,7 @@ export async function getDashboardData(): Promise<DashboardData> {
     return {
       symbol,
       price,
+      quoteVolume: ticker ? parseFloat(ticker.quoteVolume) : 0,
       midPrice,
       depthUSD: { bids: depthUSDBids, asks: depthUSDAsks },
       lowLiquidity: {

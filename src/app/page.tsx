@@ -98,7 +98,12 @@ export default function Home() {
           <div className="space-y-8">
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
               {data.liquidityData.map((item) => (
-                <PriceCard key={item.symbol} symbol={item.symbol} price={item.price} />
+                <PriceCard 
+                  key={item.symbol} 
+                  symbol={item.symbol} 
+                  price={item.price} 
+                  quoteVolume={item.quoteVolume} 
+                />
               ))}
             </div>
 

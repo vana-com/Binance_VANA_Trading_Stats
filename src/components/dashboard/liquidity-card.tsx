@@ -3,20 +3,11 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { TrendingUp, TrendingDown, AlertTriangle } from "lucide-react";
 import type { LiquidityData } from "@/types";
-import { formatSymbol } from '@/lib/utils';
+import { formatSymbol, formatCurrency } from '@/lib/utils';
 
 interface LiquidityCardProps {
   data: LiquidityData;
 }
-
-const formatCurrency = (value: number) => {
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD',
-    notation: 'compact',
-    compactDisplay: 'short',
-  }).format(value);
-};
 
 const LiquidityCard: FC<LiquidityCardProps> = ({ data }) => {
   return (
