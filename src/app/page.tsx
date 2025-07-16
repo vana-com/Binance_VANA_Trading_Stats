@@ -8,9 +8,9 @@ import { RefreshCw } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import type { DashboardData } from "@/types";
 import { refreshData } from "@/app/actions";
+import { formatSymbol } from "@/lib/utils";
 
 import PriceCard from "@/components/dashboard/price-card";
-import PriceTable from "@/components/dashboard/price-table";
 import LiquidityCard from "@/components/dashboard/liquidity-card";
 import ArbitrageOpportunities from "@/components/dashboard/arbitrage-opportunities";
 import DepthChart from "@/components/dashboard/depth-chart";
@@ -19,6 +19,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 export default function Home() {
   const [data, setData] = useState<DashboardData | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
   const [isPending, startTransition] = useTransition();
   const { toast } = useToast();
 
@@ -35,6 +36,7 @@ export default function Home() {
         });
       } else if (result.data) {
         setData(result.data);
+        setLastUpdated(new Date());
       }
     });
   };
@@ -72,11 +74,18 @@ export default function Home() {
     <main className="min-h-screen bg-background/80 p-4 md:p-8">
       <div className="max-w-7xl mx-auto space-y-8">
         <div className="flex items-center justify-between">
-          <h1 className="text-3xl font-bold text-primary font-headline">OrderFlow Insights</h1>
-          <Button onClick={handleRefresh} disabled={isPending} variant="outline">
-            <RefreshCw className={`mr-2 h-4 w-4 ${isPending ? "animate-spin" : ""}`} />
-            {isPending ? "Refreshing..." : "Refresh"}
-          </Button>
+          <h1 className="text-3xl font-bold text-primary font-headline">Binance VANA Trading Insights</h1>
+          <div className="flex items-center space-x-4">
+            {lastUpdated && !isPending && (
+              <p className="text-sm text-muted-foreground">
+                Last updated: {lastUpdated.toLocaleTimeString()}
+              </p>
+            )}
+            <Button onClick={handleRefresh} disabled={isPending} variant="outline">
+              <RefreshCw className={`mr-2 h-4 w-4 ${isPending ? "animate-spin" : ""}`} />
+              {isPending ? "Refreshing..." : "Refresh"}
+            </Button>
+          </div>
         </div>
 
         {isPending && !data ? (
@@ -104,7 +113,7 @@ export default function Home() {
                 <TabsList>
                   {data.liquidityData.map((item) => (
                     <TabsTrigger key={item.symbol} value={item.symbol}>
-                      {item.symbol} Depth
+                      {formatSymbol(item.symbol)} Depth
                     </TabsTrigger>
                   ))}
                 </TabsList>

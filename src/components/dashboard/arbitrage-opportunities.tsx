@@ -2,6 +2,7 @@ import type { FC } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import type { PairArbitrage, TriangularArbitrage } from "@/types";
+import { formatSymbol } from '@/lib/utils';
 
 interface ArbitrageOpportunitiesProps {
   pairOps: PairArbitrage[];
@@ -36,7 +37,7 @@ const ArbitrageOpportunities: FC<ArbitrageOpportunitiesProps> = ({ pairOps, tria
                     <TableBody>
                         {pairOps.map((op, index) => (
                             <TableRow key={index}>
-                                <TableCell>{op.pair.join(' / ')}</TableCell>
+                                <TableCell>{op.pair.map(formatSymbol).join(' / ')}</TableCell>
                                 <TableCell className="text-right font-mono text-accent">{formatPercent(op.spread)}</TableCell>
                             </TableRow>
                         ))}

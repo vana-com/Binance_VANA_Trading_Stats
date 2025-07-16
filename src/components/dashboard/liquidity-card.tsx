@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { TrendingUp, TrendingDown, AlertTriangle } from "lucide-react";
 import type { LiquidityData } from "@/types";
+import { formatSymbol } from '@/lib/utils';
 
 interface LiquidityCardProps {
   data: LiquidityData;
@@ -21,7 +22,7 @@ const LiquidityCard: FC<LiquidityCardProps> = ({ data }) => {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>{data.symbol}</CardTitle>
+        <CardTitle>{formatSymbol(data.symbol)}</CardTitle>
         <CardDescription>Liquidity within ±2% of mid-price</CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
