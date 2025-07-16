@@ -1,7 +1,8 @@
+
 "use client"
 
 import type { FC } from 'react';
-import { Bar, BarChart, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer, ReferenceArea, CartesianGrid } from 'recharts';
+import { Bar, BarChart, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer, ReferenceArea, CartesianGrid, Label } from 'recharts';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import type { LiquidityData } from '@/types';
 
@@ -27,7 +28,7 @@ const DepthChart: FC<DepthChartProps> = ({ data }) => {
             <p className="label font-bold">{`Price: ${label.toLocaleString(undefined, {minimumFractionDigits: 4})}`}</p>
             {payload.map((pld: any) => (
                  <p key={pld.dataKey} style={{ color: pld.color }}>
-                    {`${pld.dataKey.charAt(0).toUpperCase() + pld.dataKey.slice(1)} Volume: ${pld.value.toLocaleString()}`}
+                    {`${pld.dataKey.charAt(0).toUpperCase() + pld.dataKey.slice(1)} Volume (VANA): ${pld.value.toLocaleString()}`}
                 </p>
             ))}
           </div>
@@ -36,13 +37,12 @@ const DepthChart: FC<DepthChartProps> = ({ data }) => {
       return null;
     };
 
-
   return (
     <Card>
       <CardHeader>
         <CardTitle>Order Book Depth</CardTitle>
         <CardDescription>
-            Visual representation of bids and asks. The shaded area indicates the ±2% range from the mid-price used for liquidity calculations.
+            Visual representation of bids and asks volume (in VANA). The shaded area indicates the ±2% range from the mid-price used for liquidity calculations.
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -51,7 +51,7 @@ const DepthChart: FC<DepthChartProps> = ({ data }) => {
             <BarChart
               data={chartData}
               margin={{
-                top: 5, right: 30, left: 20, bottom: 5,
+                top: 5, right: 30, left: 30, bottom: 5,
               }}
             >
               <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
@@ -67,7 +67,9 @@ const DepthChart: FC<DepthChartProps> = ({ data }) => {
                 tickFormatter={(value) => value.toLocaleString()}
                 stroke="hsl(var(--muted-foreground))"
                 fontSize={12}
-                />
+                >
+                 <Label value="Volume (VANA)" angle={-90} position="insideLeft" style={{ textAnchor: 'middle', fill: 'hsl(var(--muted-foreground))' }} />
+                </YAxis>
               <Tooltip content={<CustomTooltip />} />
               <Legend />
               <ReferenceArea x1={lowerBound} x2={upperBound} strokeOpacity={0.3} fill="hsl(var(--accent))" fillOpacity={0.1} />
