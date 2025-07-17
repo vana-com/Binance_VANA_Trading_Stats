@@ -33,9 +33,9 @@ const ArbitrageOpportunities: FC<ArbitrageOpportunitiesProps> = ({ opportunities
         );
     };
 
-    const InfoColumn: FC<{ title: string; symbol: string; exchange: string; price: number; className?: string }> = ({ title, symbol, exchange, price, className }) => (
+    const InfoColumn: FC<{ title: string; subtitle: string; symbol: string; exchange: string; price: number; className?: string }> = ({ title, subtitle, symbol, exchange, price, className }) => (
         <div className={className}>
-            <p className="text-sm text-muted-foreground">{title}</p>
+            <p className="text-sm text-muted-foreground">{title} <span className="text-xs">({subtitle})</span></p>
             <p className="font-bold text-lg">{formatSymbol(symbol)}</p>
             <p className="text-sm">on {exchange}</p>
             <p className="text-xs font-mono mt-1">Price: ${price.toLocaleString(undefined, { minimumFractionDigits: 4, maximumFractionDigits: 4 })}</p>
@@ -51,9 +51,9 @@ const ArbitrageOpportunities: FC<ArbitrageOpportunitiesProps> = ({ opportunities
             <CardContent>
                 {bestOp ? (
                      <div className="flex items-center justify-between p-3 rounded-lg bg-card border">
-                        <InfoColumn title="Buy" symbol={bestOp.buySymbol} exchange={bestOp.buyOn} price={bestOp.buyPrice} />
+                        <InfoColumn title="Buy" subtitle="Best Ask" symbol={bestOp.buySymbol} exchange={bestOp.buyOn} price={bestOp.buyPrice} />
                         <ArrowRight className="h-6 w-6 text-muted-foreground mx-4 shrink-0" />
-                        <InfoColumn title="Sell" symbol={bestOp.sellSymbol} exchange={bestOp.sellOn} price={bestOp.sellPrice} className="text-right" />
+                        <InfoColumn title="Sell" subtitle="Best Bid" symbol={bestOp.sellSymbol} exchange={bestOp.sellOn} price={bestOp.sellPrice} className="text-right" />
                         <div className="w-px bg-border h-16 mx-6"></div>
                         <div className="flex flex-col items-center">
                             <p className="text-sm text-muted-foreground">Profit</p>

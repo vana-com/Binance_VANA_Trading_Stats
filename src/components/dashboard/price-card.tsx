@@ -6,6 +6,7 @@ import { formatCurrency } from '@/lib/utils';
 interface PriceCardProps {
   symbol: string;
   price: number;
+  midPrice: number; // Keep for potential future use, but we'll display 'price'
   quoteVolume: number;
   exchange: string;
 }
@@ -24,7 +25,7 @@ const PriceCard: FC<PriceCardProps> = ({ symbol, price, quoteVolume, exchange })
             })}
         </div>
         <p className="text-xs text-muted-foreground">
-          24h Volume: {formatCurrency(quoteVolume)}
+          24h Volume: {formatCurrency(quoteVolume)} (Last Traded)
         </p>
       </CardContent>
     </Card>
