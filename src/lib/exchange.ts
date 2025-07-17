@@ -57,28 +57,33 @@ const getMexcData = async (): Promise<ExchangeData> => {
     const baseUrl = 'https://api.mexc.com/api/v3';
     const symbol = VANA_USDT_SYMBOL;
     const [priceData, tickerData, depthData] = await Promise.all([
-        fetchAPI<{ price: string }>(`${baseUrl}/ticker/price?symbol=${symbol}`, 'MEXC'),
-        fetchAPI<{ quoteVolume: string }>(`${baseUrl}/ticker/24hr?symbol=${symbol}`, 'MEXC'),
+        fetchAPI<{ price: string }[]>(`${baseUrl}/ticker/price?symbol=${symbol}`, 'MEXC'),
+        fetchAPI<{ quoteVolume: string, lastPrice: string }[]>(`${baseUrl}/ticker/24hr?symbol=${symbol}`, 'MEXC'),
         fetchAPI<{ bids: [string, string][], asks: [string, string][] }>(`${baseUrl}/depth?symbol=${symbol}&limit=${DEPTH_LIMIT}`, 'MEXC')
     ]);
 
+    const price = parseFloat(tickerData[0].lastPrice);
+    const quoteVolume = parseFloat(tickerData[0].quoteVolume);
     const bids = depthData.bids.map(([price, size]) => ({ price: parseFloat(price), size: parseFloat(size) }));
     const asks = depthData.asks.map(([price, size]) => ({ price: parseFloat(price), size: parseFloat(size) }));
-    const pairData = processPairData('MEXC', symbol, parseFloat(priceData.price), parseFloat(tickerData.quoteVolume), bids, asks);
+    const pairData = processPairData('MEXC', symbol, price, quoteVolume, bids, asks);
     return { exchange: 'MEXC', pairs: [pairData] };
 };
 
 // --- Bitget ---
 const getBitgetData = async (): Promise<ExchangeData> => {
-    const baseUrl = 'https://api.bitget.com/api/v2/spot/market';
+    const v2BaseUrl = 'https://api.bitget.com/api/v2/spot/market';
+    const v1BaseUrl = 'https://api.bitget.com/api/spot/v1/market';
     const symbol = VANA_USDT_SYMBOL;
-    const [tickerData, depthData] = await Promise.all([
-       fetchAPI<{ data: { quoteVol: string, openPrice: string }[] }>(`${baseUrl}/tickers?symbol=${symbol}`, 'Bitget'),
-       fetchAPI<{ data: { bids: [string, string][], asks: [string, string][] } }>(`${baseUrl}/orderbook?symbol=${symbol}&limit=${DEPTH_LIMIT}`, 'Bitget')
+    
+    const [tickerData, depthData, volumeData] = await Promise.all([
+       fetchAPI<{ data: { lastPr: string }[] }>(`${v2BaseUrl}/tickers?symbol=${symbol}`, 'Bitget-v2'),
+       fetchAPI<{ data: { bids: [string, string][], asks: [string, string][] } }>(`${v2BaseUrl}/orderbook?symbol=${symbol}&limit=${DEPTH_LIMIT}`, 'Bitget-v2'),
+       fetchAPI<{ data: { quoteVol: string } }>(`${v1BaseUrl}/ticker?symbol=${symbol}_SPBL`, 'Bitget-v1')
     ]);
     
-    const price = parseFloat(tickerData.data[0].openPrice);
-    const quoteVolume = parseFloat(tickerData.data[0].quoteVol);
+    const price = parseFloat(tickerData.data[0].lastPr);
+    const quoteVolume = parseFloat(volumeData.data.quoteVol);
     const bids = depthData.data.bids.map(([price, size]) => ({ price: parseFloat(price), size: parseFloat(size) }));
     const asks = depthData.data.asks.map(([price, size]) => ({ price: parseFloat(price), size: parseFloat(size) }));
     const pairData = processPairData('Bitget', symbol, price, quoteVolume, bids, asks);
