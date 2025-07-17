@@ -16,11 +16,7 @@ const formatPercent = (value: number) => {
 
 const getBestOpportunity = (ops: CrossExchangeArbitrage[]): CrossExchangeArbitrage | null => {
     if (!ops || ops.length === 0) return null;
-    // Filter for positive net profit before reducing
-    const profitableOps = ops.filter(op => op.profit > 0);
-    if (profitableOps.length === 0) return null;
-
-    return profitableOps.reduce((best, current) => current.profit > best.profit ? current : best, profitableOps[0]);
+    return ops.reduce((best, current) => current.profit > best.profit ? current : best, ops[0]);
 }
 
 const OpportunityRow: FC<{ title: string; children: ReactNode }> = ({ title, children }) => (
@@ -47,7 +43,7 @@ const ArbitrageOpportunities: FC<ArbitrageOpportunitiesProps> = ({ opportunities
         <Card>
             <CardHeader>
                 <CardTitle>Cross-Exchange Arbitrage Watch</CardTitle>
-                <CardDescription>Most profitable opportunity found, net of fees, across all stablecoin pairs.</CardDescription>
+                <CardDescription>Most promising arbitrage opportunity based on pure price difference.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-3">
                 {bestOp ? (

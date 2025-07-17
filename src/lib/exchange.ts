@@ -6,7 +6,6 @@ const EXCHANGES = ['Binance', 'MEXC', 'Bitget', 'Bybit'];
 const DEPTH_LIMIT = 20;
 const DEPTH_BAND_PERCENT = 0.02; // ±2%
 const LOW_LIQUIDITY_THRESHOLD = 60000; // $60,000
-const TAKER_FEE = 0.001; // 0.1% Taker fee
 
 // Helper to handle API requests and errors
 async function fetchAPI<T>(url: string, exchangeName: string): Promise<T> {
@@ -58,13 +57,14 @@ const getMexcData = async (): Promise<ExchangeData> => {
     const symbol = VANA_USDT_SYMBOL;
     const [priceData, tickerData, depthData] = await Promise.all([
         fetchAPI<{ price: string }>(`${baseUrl}/ticker/price?symbol=${symbol}`, 'MEXC'),
-        fetchAPI<{ quoteVolume: string }>(`${baseUrl}/ticker/24hr?symbol=${symbol}`, 'MEXC'),
+        fetchAPI<any[]>(`${baseUrl}/ticker/24hr?symbol=${symbol}`, 'MEXC'),
         fetchAPI<{ bids: [string, string][], asks: [string, string][] }>(`${baseUrl}/depth?symbol=${symbol}&limit=${DEPTH_LIMIT}`, 'MEXC')
     ]);
 
+    const quoteVolume = tickerData.length > 0 ? parseFloat(tickerData[0].quoteVolume) : 0;
     const bids = depthData.bids.map(([price, size]) => ({ price: parseFloat(price), size: parseFloat(size) }));
     const asks = depthData.asks.map(([price, size]) => ({ price: parseFloat(price), size: parseFloat(size) }));
-    const pairData = processPairData('MEXC', symbol, parseFloat(priceData.price), parseFloat(tickerData.quoteVolume), bids, asks);
+    const pairData = processPairData('MEXC', symbol, parseFloat(priceData.price), quoteVolume, bids, asks);
     return { exchange: 'MEXC', pairs: [pairData] };
 };
 
@@ -179,8 +179,7 @@ export async function getDashboardData(): Promise<DashboardData> {
                 const sellPrice = sellPair.orderBook.bids[0]?.price;
 
                 if (buyPrice && sellPrice) {
-                    const grossProfit = (sellPrice / buyPrice) - 1;
-                    const netProfit = grossProfit - (TAKER_FEE * 2);
+                    const profit = (sellPrice / buyPrice) - 1;
 
                     // We will record all possibilities and let the UI decide how to display them
                     arbitrage.push({
@@ -188,7 +187,7 @@ export async function getDashboardData(): Promise<DashboardData> {
                         buySymbol: buyPair.symbol,
                         sellOn: sellPair.exchange,
                         sellSymbol: sellPair.symbol,
-                        profit: netProfit,
+                        profit: profit,
                     });
                 }
             }
