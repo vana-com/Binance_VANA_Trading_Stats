@@ -57,16 +57,14 @@ const getMexcData = async (): Promise<ExchangeData> => {
     const baseUrl = 'https://api.mexc.com/api/v3';
     const symbol = VANA_USDT_SYMBOL;
     const [priceData, tickerData, depthData] = await Promise.all([
-        fetchAPI<{ symbol: string, price: string }>(`${baseUrl}/ticker/price?symbol=${symbol}`, 'MEXC-price'),
-        fetchAPI<{ quoteVolume: string }[]>(`${baseUrl}/ticker/24hr?symbol=${symbol}`, 'MEXC-24hr'),
+        fetchAPI<{ price: string }>(`${baseUrl}/ticker/price?symbol=${symbol}`, 'MEXC-price'),
+        fetchAPI<{ quoteVolume: string }>(`${baseUrl}/ticker/24hr?symbol=${symbol}`, 'MEXC-24hr'),
         fetchAPI<{ bids: [string, string][], asks: [string, string][] }>(`${baseUrl}/depth?symbol=${symbol}&limit=${DEPTH_LIMIT}`, 'MEXC-depth')
     ]);
 
-    const price = parseFloat(priceData.price);
-    const quoteVolume = parseFloat(tickerData[0].quoteVolume);
     const bids = depthData.bids.map(([price, size]) => ({ price: parseFloat(price), size: parseFloat(size) }));
     const asks = depthData.asks.map(([price, size]) => ({ price: parseFloat(price), size: parseFloat(size) }));
-    const pairData = processPairData('MEXC', symbol, price, quoteVolume, bids, asks);
+    const pairData = processPairData('MEXC', symbol, parseFloat(priceData.price), parseFloat(tickerData.quoteVolume), bids, asks);
     return { exchange: 'MEXC', pairs: [pairData] };
 };
 
