@@ -77,7 +77,7 @@ export default function Home() {
         <div className="grid gap-6 md:grid-cols-1 lg:grid-cols-2">
             <PriceCard
                 symbol={pairData.symbol}
-                price={pairData.price}
+                price={pairData.midPrice}
                 quoteVolume={pairData.quoteVolume}
                 exchange={pairData.exchange}
             />
@@ -119,7 +119,7 @@ export default function Home() {
             <div className="grid gap-6 md:grid-cols-1 lg:grid-cols-2">
                 <PriceCard
                     symbol={pairData.symbol}
-                    price={pairData.price}
+                    price={pairData.midPrice}
                     quoteVolume={pairData.quoteVolume}
                     exchange={pairData.exchange}
                 />
