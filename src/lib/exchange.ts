@@ -56,9 +56,8 @@ const getBinanceData = async (): Promise<ExchangeData> => {
 const getMexcData = async (): Promise<ExchangeData> => {
     const baseUrl = 'https://api.mexc.com/api/v3';
     const symbol = VANA_USDT_SYMBOL;
-    const [priceData, tickerData, depthData] = await Promise.all([
-        fetchAPI<{ price: string }[]>(`${baseUrl}/ticker/price?symbol=${symbol}`, 'MEXC'),
-        fetchAPI<{ quoteVolume: string, lastPrice: string }[]>(`${baseUrl}/ticker/24hr?symbol=${symbol}`, 'MEXC'),
+    const [tickerData, depthData] = await Promise.all([
+        fetchAPI<{ lastPrice: string, quoteVolume: string }[]>(`${baseUrl}/ticker/24hr?symbol=${symbol}`, 'MEXC'),
         fetchAPI<{ bids: [string, string][], asks: [string, string][] }>(`${baseUrl}/depth?symbol=${symbol}&limit=${DEPTH_LIMIT}`, 'MEXC')
     ]);
 
