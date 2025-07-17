@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { RefreshCw } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import type { DashboardData, ExchangeData } from "@/types";
+import type { DashboardData, ExchangeData, VanaPairData } from "@/types";
 import { refreshData } from "@/app/actions";
 import { formatSymbol } from "@/lib/utils";
 
@@ -48,6 +48,7 @@ export default function Home() {
 
   const renderSkeletons = () => (
     <div className="space-y-8">
+       <Skeleton className="h-40 w-full" />
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
         <Skeleton className="h-28 w-full" />
         <Skeleton className="h-28 w-full" />
@@ -70,23 +71,67 @@ export default function Home() {
       </div>
     </div>
   );
-
-  const renderExchangeTab = (exchangeData: ExchangeData) => (
-    <div className="space-y-8 mt-4">
-      <div className="grid gap-6 md:grid-cols-1">
-        <PriceCard
-          symbol={exchangeData.symbol}
-          price={exchangeData.price}
-          quoteVolume={exchangeData.quoteVolume}
-          exchange={exchangeData.exchange}
-        />
-      </div>
-      <div className="grid gap-6 md:grid-cols-2">
-         <LiquidityCard data={exchangeData} />
-         <DepthChart data={exchangeData} />
-      </div>
+  
+  const renderPairContent = (pairData: VanaPairData) => (
+     <div className="space-y-8 mt-4">
+        <div className="grid gap-6 md:grid-cols-1 lg:grid-cols-2">
+            <PriceCard
+                symbol={pairData.symbol}
+                price={pairData.price}
+                quoteVolume={pairData.quoteVolume}
+                exchange={pairData.exchange}
+            />
+            <LiquidityCard data={pairData} />
+        </div>
+        <div className="grid grid-cols-1">
+            <DepthChart data={pairData} />
+        </div>
     </div>
+  )
+
+  const renderBinanceTab = (exchangeData: ExchangeData) => (
+    <Tabs defaultValue={exchangeData.pairs[0]?.symbol} className="w-full mt-4">
+        <TabsList>
+            {exchangeData.pairs.map((item) => (
+            <TabsTrigger key={item.symbol} value={item.symbol}>
+                {formatSymbol(item.symbol)}
+            </TabsTrigger>
+            ))}
+        </TabsList>
+        {exchangeData.pairs.map((item) => (
+            <TabsContent key={item.symbol} value={item.symbol}>
+                {renderPairContent(item)}
+            </TabsContent>
+        ))}
+    </Tabs>
   );
+
+  const renderExchangeTab = (exchangeData: ExchangeData) => {
+    if (exchangeData.exchange === 'Binance') {
+      return renderBinanceTab(exchangeData);
+    }
+    // For other exchanges, we assume one VANA/USDT pair
+    const pairData = exchangeData.pairs[0];
+    if (!pairData) return <p>No data available for {exchangeData.exchange}.</p>;
+    
+    return (
+        <div className="space-y-8 mt-4">
+            <div className="grid gap-6 md:grid-cols-1 lg:grid-cols-2">
+                <PriceCard
+                    symbol={pairData.symbol}
+                    price={pairData.price}
+                    quoteVolume={pairData.quoteVolume}
+                    exchange={pairData.exchange}
+                />
+                <LiquidityCard data={pairData} />
+            </div>
+            <div className="grid grid-cols-1">
+                <DepthChart data={pairData} />
+            </div>
+        </div>
+    )
+  };
+
 
   return (
     <main className="min-h-screen bg-background/80 p-4 md:p-8">

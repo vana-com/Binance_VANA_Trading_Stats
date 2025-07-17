@@ -3,11 +3,11 @@
 import type { FC } from 'react';
 import { Bar, BarChart, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer, ReferenceArea, CartesianGrid, Label } from 'recharts';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import type { ExchangeData } from '@/types';
+import type { VanaPairData } from '@/types';
 import { formatCurrency } from '@/lib/utils';
 
 interface DepthChartProps {
-  data: ExchangeData;
+  data: VanaPairData;
 }
 
 const DepthChart: FC<DepthChartProps> = ({ data }) => {

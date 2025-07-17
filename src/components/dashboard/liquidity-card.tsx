@@ -2,11 +2,11 @@ import type { FC } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { TrendingUp, TrendingDown, AlertTriangle } from "lucide-react";
-import type { ExchangeData } from "@/types";
+import type { VanaPairData } from "@/types";
 import { formatSymbol, formatCurrency } from '@/lib/utils';
 
 interface LiquidityCardProps {
-  data: ExchangeData;
+  data: VanaPairData;
 }
 
 const LiquidityCard: FC<LiquidityCardProps> = ({ data }) => {

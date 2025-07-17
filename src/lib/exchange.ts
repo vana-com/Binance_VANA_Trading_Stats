@@ -1,12 +1,12 @@
-import type { ExchangeData, OrderBookLevel, DashboardData, CrossExchangeArbitrage } from "@/types";
+import type { ExchangeData, VanaPairData, DashboardData, CrossExchangeArbitrage } from "@/types";
 
-const SYMBOL = 'VANAUSDT';
+const BINANCE_SYMBOLS = ['VANAUSDT', 'VANAUSDC', 'VANAFDUSD'];
+const VANA_USDT_SYMBOL = 'VANAUSDT';
 const EXCHANGES = ['Binance', 'MEXC', 'Bitget', 'Bybit'];
 const DEPTH_LIMIT = 20;
 const DEPTH_BAND_PERCENT = 0.02; // ±2%
 const LOW_LIQUIDITY_THRESHOLD = 60000; // $60,000
 const TAKER_FEE = 0.001; // 0.1% Taker fee
-const ARB_THRESHOLD = 0.0025; // 0.25%
 
 // Helper to handle API requests and errors
 async function fetchAPI<T>(url: string, exchangeName: string): Promise<T> {
@@ -15,7 +15,7 @@ async function fetchAPI<T>(url: string, exchangeName: string): Promise<T> {
         if (!response.ok) {
             const errorBody = await response.text();
             console.error(`Error fetching from ${exchangeName} (${response.status}): ${errorBody}`);
-            throw new Error(`Failed to fetch data from ${exchangeName}: ${response.status}`);
+            throw new Error(`Failed to fetch data from ${exchangeName}: ${response.statusText || response.status}`);
         }
         return response.json();
     } catch (error) {
@@ -28,60 +28,82 @@ async function fetchAPI<T>(url: string, exchangeName: string): Promise<T> {
 }
 
 // --- Binance ---
-const getBinanceData = async (): Promise<ExchangeData> => {
+const getBinancePairData = async (symbol: string): Promise<VanaPairData> => {
     const baseUrl = 'https://api.binance.com/api/v3';
-    const priceData = await fetchAPI<{ price: string }>(`${baseUrl}/ticker/price?symbol=${SYMBOL}`, 'Binance');
-    const tickerData = await fetchAPI<{ quoteVolume: string }>(`${baseUrl}/ticker/24hr?symbol=${SYMBOL}`, 'Binance');
-    const depthData = await fetchAPI<{ bids: [string, string][], asks: [string, string][] }>(`${baseUrl}/depth?symbol=${SYMBOL}&limit=${DEPTH_LIMIT}`, 'Binance');
+    const [priceData, tickerData, depthData] = await Promise.all([
+        fetchAPI<{ price: string }>(`${baseUrl}/ticker/price?symbol=${symbol}`, `Binance-${symbol}`),
+        fetchAPI<{ quoteVolume: string }>(`${baseUrl}/ticker/24hr?symbol=${symbol}`, `Binance-${symbol}`),
+        fetchAPI<{ bids: [string, string][], asks: [string, string][] }>(`${baseUrl}/depth?symbol=${symbol}&limit=${DEPTH_LIMIT}`, `Binance-${symbol}`)
+    ]);
     
     const bids = depthData.bids.map(([price, size]) => ({ price: parseFloat(price), size: parseFloat(size) }));
     const asks = depthData.asks.map(([price, size]) => ({ price: parseFloat(price), size: parseFloat(size) }));
     
-    return processExchangeData('Binance', SYMBOL, parseFloat(priceData.price), parseFloat(tickerData.quoteVolume), bids, asks);
+    return processPairData('Binance', symbol, parseFloat(priceData.price), parseFloat(tickerData.quoteVolume), bids, asks);
+}
+
+const getBinanceData = async (): Promise<ExchangeData> => {
+    const pairPromises = BINANCE_SYMBOLS.map(symbol => getBinancePairData(symbol).catch(e => {
+        console.error(`Could not fetch ${symbol} from Binance`, e);
+        return null; // Return null on failure for a specific pair
+    }));
+    const pairs = (await Promise.all(pairPromises)).filter((p): p is VanaPairData => p !== null);
+    return { exchange: 'Binance', pairs };
 };
+
 
 // --- MEXC ---
 const getMexcData = async (): Promise<ExchangeData> => {
     const baseUrl = 'https://api.mexc.com/api/v3';
-    const priceData = await fetchAPI<{ price: string }>(`${baseUrl}/ticker/price?symbol=${SYMBOL}`, 'MEXC');
-    const tickerData = await fetchAPI<{ quoteVolume: string }>(`${baseUrl}/ticker/24hr?symbol=${SYMBOL}`, 'MEXC');
-    const depthData = await fetchAPI<{ bids: [string, string][], asks: [string, string][] }>(`${baseUrl}/depth?symbol=${SYMBOL}&limit=${DEPTH_LIMIT}`, 'MEXC');
+    const symbol = VANA_USDT_SYMBOL;
+    const [priceData, tickerData, depthData] = await Promise.all([
+        fetchAPI<{ price: string }>(`${baseUrl}/ticker/price?symbol=${symbol}`, 'MEXC'),
+        fetchAPI<{ quoteVolume: string }>(`${baseUrl}/ticker/24hr?symbol=${symbol}`, 'MEXC'),
+        fetchAPI<{ bids: [string, string][], asks: [string, string][] }>(`${baseUrl}/depth?symbol=${symbol}&limit=${DEPTH_LIMIT}`, 'MEXC')
+    ]);
 
     const bids = depthData.bids.map(([price, size]) => ({ price: parseFloat(price), size: parseFloat(size) }));
     const asks = depthData.asks.map(([price, size]) => ({ price: parseFloat(price), size: parseFloat(size) }));
-
-    return processExchangeData('MEXC', SYMBOL, parseFloat(priceData.price), parseFloat(tickerData.quoteVolume), bids, asks);
+    const pairData = processPairData('MEXC', symbol, parseFloat(priceData.price), parseFloat(tickerData.quoteVolume), bids, asks);
+    return { exchange: 'MEXC', pairs: [pairData] };
 };
 
 // --- Bitget ---
 const getBitgetData = async (): Promise<ExchangeData> => {
     const baseUrl = 'https://api.bitget.com/api/v2/spot/market';
-    const tickerData = await fetchAPI<{ data: { quoteVol: string, openPrice: string }[] }>(`${baseUrl}/tickers?symbol=${SYMBOL}`, 'Bitget');
-    const depthData = await fetchAPI<{ data: { bids: [string, string][], asks: [string, string][] } }>(`${baseUrl}/orderbook?symbol=${SYMBOL}&limit=${DEPTH_LIMIT}`, 'Bitget');
+    const symbol = VANA_USDT_SYMBOL;
+    const [tickerData, depthData] = await Promise.all([
+       fetchAPI<{ data: { quoteVol: string, openPrice: string }[] }>(`${baseUrl}/tickers?symbol=${symbol}`, 'Bitget'),
+       fetchAPI<{ data: { bids: [string, string][], asks: [string, string][] } }>(`${baseUrl}/orderbook?symbol=${symbol}&limit=${DEPTH_LIMIT}`, 'Bitget')
+    ]);
     
-    const price = parseFloat(tickerData.data[0].openPrice); // Using openPrice as ticker doesn't have lastPrice
+    const price = parseFloat(tickerData.data[0].openPrice);
     const quoteVolume = parseFloat(tickerData.data[0].quoteVol);
     const bids = depthData.data.bids.map(([price, size]) => ({ price: parseFloat(price), size: parseFloat(size) }));
     const asks = depthData.data.asks.map(([price, size]) => ({ price: parseFloat(price), size: parseFloat(size) }));
-
-    return processExchangeData('Bitget', SYMBOL, price, quoteVolume, bids, asks);
+    const pairData = processPairData('Bitget', symbol, price, quoteVolume, bids, asks);
+    return { exchange: 'Bitget', pairs: [pairData] };
 };
 
 // --- Bybit ---
 const getBybitData = async (): Promise<ExchangeData> => {
-    const baseUrl = 'https://api.bybit.com/spot/v3/public';
-    const priceData = await fetchAPI<{ result: { price: string } }>(`${baseUrl}/quote/ticker/price?symbol=${SYMBOL}`, 'Bybit');
-    const tickerData = await fetchAPI<{ result: { quoteVolume: string } }>(`${baseUrl}/quote/ticker/24hr?symbol=${SYMBOL}`, 'Bybit');
-    const depthData = await fetchAPI<{ result: { bids: [string, string][], asks: [string, string][] } }>(`${baseUrl}/quote/depth?symbol=${SYMBOL}&limit=${DEPTH_LIMIT}`, 'Bybit');
+    const baseUrl = 'https://api.bybit.com/v5/market';
+    const symbol = VANA_USDT_SYMBOL;
+     const [tickers, depthData] = await Promise.all([
+        fetchAPI<{ result: { list: { lastPrice: string, volume24h: string }[] } }>(`${baseUrl}/tickers?category=spot&symbol=${symbol}`, 'Bybit'),
+        fetchAPI<{ result: { b: [string, string][], a: [string, string][] } }>(`${baseUrl}/orderbook?category=spot&symbol=${symbol}&limit=${DEPTH_LIMIT}`, 'Bybit')
+    ]);
 
-    const bids = depthData.result.bids.map(([price, size]) => ({ price: parseFloat(price), size: parseFloat(size) }));
-    const asks = depthData.result.asks.map(([price, size]) => ({ price: parseFloat(price), size: parseFloat(size) }));
-
-    return processExchangeData('Bybit', SYMBOL, parseFloat(priceData.result.price), parseFloat(tickerData.result.quoteVolume), bids, asks);
+    const price = parseFloat(tickers.result.list[0].lastPrice);
+    const quoteVolume = parseFloat(tickers.result.list[0].volume24h);
+    const bids = depthData.result.b.map(([price, size]) => ({ price: parseFloat(price), size: parseFloat(size) }));
+    const asks = depthData.result.a.map(([price, size]) => ({ price: parseFloat(price), size: parseFloat(size) }));
+    const pairData = processPairData('Bybit', symbol, price, quoteVolume, bids, asks);
+    return { exchange: 'Bybit', pairs: [pairData] };
 };
 
-// Generic processing function
-function processExchangeData(exchange: string, symbol: string, price: number, quoteVolume: number, bids: {price: number, size: number}[], asks: {price: number, size: number}[]): ExchangeData {
+// Generic processing function for a single pair
+function processPairData(exchange: string, symbol: string, price: number, quoteVolume: number, bids: {price: number, size: number}[], asks: {price: number, size: number}[]): VanaPairData {
     const sortedBids = bids.sort((a, b) => b.price - a.price);
     const sortedAsks = asks.sort((a, b) => a.price - b.price);
 
@@ -109,8 +131,8 @@ function processExchangeData(exchange: string, symbol: string, price: number, qu
             asks: depthUSDAsks < LOW_LIQUIDITY_THRESHOLD,
         },
         orderBook: {
-            bids: sortedBids.map(o => ({...o, total: 0})),
-            asks: sortedAsks.map(o => ({...o, total: 0})),
+            bids: sortedBids,
+            asks: sortedAsks,
         }
     };
 }
@@ -129,34 +151,39 @@ export async function getDashboardData(): Promise<DashboardData> {
 
     const exchangeData: ExchangeData[] = [];
     results.forEach((result, index) => {
-        if (result.status === 'fulfilled') {
+        if (result.status === 'fulfilled' && result.value.pairs.length > 0) {
             exchangeData.push(result.value);
         } else {
-            console.error(`Failed to load data for ${EXCHANGES[index]}:`, result.reason);
-            // Optionally create a placeholder error object for the UI
+            console.error(`Failed to load data for ${EXCHANGES[index]}:`, result.status === 'rejected' ? result.reason : 'No pairs returned');
         }
     });
     
     const arbitrage: CrossExchangeArbitrage[] = [];
-    if (exchangeData.length > 1) {
-        for (let i = 0; i < exchangeData.length; i++) {
-            for (let j = 0; j < exchangeData.length; j++) {
+    // Extract all VANA/USDT pairs for arbitrage calculation
+    const vanaUsdtPairs = exchangeData
+        .map(ex => ex.pairs.find(p => p.symbol === VANA_USDT_SYMBOL))
+        .filter((p): p is VanaPairData => p !== undefined);
+
+
+    if (vanaUsdtPairs.length > 1) {
+        for (let i = 0; i < vanaUsdtPairs.length; i++) {
+            for (let j = 0; j < vanaUsdtPairs.length; j++) {
                 if (i === j) continue;
 
-                const buyExchange = exchangeData[i];
-                const sellExchange = exchangeData[j];
+                const buyPair = vanaUsdtPairs[i];
+                const sellPair = vanaUsdtPairs[j];
                 
-                const buyPrice = buyExchange.orderBook.asks[0]?.price; // Price to buy
-                const sellPrice = sellExchange.orderBook.bids[0]?.price; // Price to sell
+                const buyPrice = buyPair.orderBook.asks[0]?.price;
+                const sellPrice = sellPair.orderBook.bids[0]?.price;
 
                 if (buyPrice && sellPrice) {
                     const grossProfit = (sellPrice / buyPrice) - 1;
                     const netProfit = grossProfit - (TAKER_FEE * 2);
 
-                    if (netProfit > 0) { // Return all positive opportunities
+                    if (netProfit > 0) {
                         arbitrage.push({
-                            buyOn: buyExchange.exchange,
-                            sellOn: sellExchange.exchange,
+                            buyOn: buyPair.exchange,
+                            sellOn: sellPair.exchange,
                             profit: netProfit,
                         });
                     }
