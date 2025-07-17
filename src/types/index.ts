@@ -30,7 +30,9 @@ export type ExchangeData = {
 
 export type CrossExchangeArbitrage = {
   buyOn: string;
+  buySymbol: string;
   sellOn: string;
+  sellSymbol: string;
   profit: number;
 }
 

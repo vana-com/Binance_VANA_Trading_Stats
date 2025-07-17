@@ -57,9 +57,9 @@ const getMexcData = async (): Promise<ExchangeData> => {
     const baseUrl = 'https://api.mexc.com/api/v3';
     const symbol = VANA_USDT_SYMBOL;
     const [priceData, tickerData, depthData] = await Promise.all([
-        fetchAPI<{ price: string }>(`${baseUrl}/ticker/price?symbol=${symbol}`, 'MEXC-price'),
-        fetchAPI<{ quoteVolume: string }>(`${baseUrl}/ticker/24hr?symbol=${symbol}`, 'MEXC-24hr'),
-        fetchAPI<{ bids: [string, string][], asks: [string, string][] }>(`${baseUrl}/depth?symbol=${symbol}&limit=${DEPTH_LIMIT}`, 'MEXC-depth')
+        fetchAPI<{ price: string }>(`${baseUrl}/ticker/price?symbol=${symbol}`, 'MEXC'),
+        fetchAPI<{ quoteVolume: string }>(`${baseUrl}/ticker/24hr?symbol=${symbol}`, 'MEXC'),
+        fetchAPI<{ bids: [string, string][], asks: [string, string][] }>(`${baseUrl}/depth?symbol=${symbol}&limit=${DEPTH_LIMIT}`, 'MEXC')
     ]);
 
     const bids = depthData.bids.map(([price, size]) => ({ price: parseFloat(price), size: parseFloat(size) }));
@@ -162,20 +162,19 @@ export async function getDashboardData(): Promise<DashboardData> {
     });
     
     const arbitrage: CrossExchangeArbitrage[] = [];
-    // Extract all VANA/USDT pairs for arbitrage calculation
-    const vanaUsdtPairs = exchangeData
-        .map(ex => ex.pairs.find(p => p.symbol === VANA_USDT_SYMBOL))
-        .filter((p): p is VanaPairData => p !== undefined);
+    // Extract all VANA pairs for arbitrage calculation
+    const allVanaPairs = exchangeData.flatMap(ex => ex.pairs);
 
-
-    if (vanaUsdtPairs.length > 1) {
-        for (let i = 0; i < vanaUsdtPairs.length; i++) {
-            for (let j = 0; j < vanaUsdtPairs.length; j++) {
+    if (allVanaPairs.length > 1) {
+        for (let i = 0; i < allVanaPairs.length; i++) {
+            for (let j = 0; j < allVanaPairs.length; j++) {
+                // Don't compare a pair with itself if it's from the same exchange
                 if (i === j) continue;
 
-                const buyPair = vanaUsdtPairs[i];
-                const sellPair = vanaUsdtPairs[j];
+                const buyPair = allVanaPairs[i];
+                const sellPair = allVanaPairs[j];
                 
+                // Get the best ask price to buy and best bid price to sell
                 const buyPrice = buyPair.orderBook.asks[0]?.price;
                 const sellPrice = sellPair.orderBook.bids[0]?.price;
 
@@ -183,13 +182,14 @@ export async function getDashboardData(): Promise<DashboardData> {
                     const grossProfit = (sellPrice / buyPrice) - 1;
                     const netProfit = grossProfit - (TAKER_FEE * 2);
 
-                    if (netProfit > 0) {
-                        arbitrage.push({
-                            buyOn: buyPair.exchange,
-                            sellOn: sellPair.exchange,
-                            profit: netProfit,
-                        });
-                    }
+                    // We will record all possibilities and let the UI decide how to display them
+                    arbitrage.push({
+                        buyOn: buyPair.exchange,
+                        buySymbol: buyPair.symbol,
+                        sellOn: sellPair.exchange,
+                        sellSymbol: sellPair.symbol,
+                        profit: netProfit,
+                    });
                 }
             }
         }

@@ -16,7 +16,11 @@ const formatPercent = (value: number) => {
 
 const getBestOpportunity = (ops: CrossExchangeArbitrage[]): CrossExchangeArbitrage | null => {
     if (!ops || ops.length === 0) return null;
-    return ops.reduce((best, current) => current.profit > best.profit ? current : best, ops[0]);
+    // Filter for positive net profit before reducing
+    const profitableOps = ops.filter(op => op.profit > 0);
+    if (profitableOps.length === 0) return null;
+
+    return profitableOps.reduce((best, current) => current.profit > best.profit ? current : best, profitableOps[0]);
 }
 
 const OpportunityRow: FC<{ title: string; children: ReactNode }> = ({ title, children }) => (
@@ -30,7 +34,7 @@ const ArbitrageOpportunities: FC<ArbitrageOpportunitiesProps> = ({ opportunities
     const bestOp = getBestOpportunity(opportunities);
 
     const renderValue = (value: number) => {
-        const isProfitable = value > 0.0025; // Using arb threshold
+        const isProfitable = value > 0;
         return (
             <div className={`flex items-center font-mono text-sm ${isProfitable ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
                 {isProfitable ? <ArrowUp className="h-4 w-4 mr-1" /> : <ArrowDown className="h-4 w-4 mr-1" />}
@@ -43,13 +47,14 @@ const ArbitrageOpportunities: FC<ArbitrageOpportunitiesProps> = ({ opportunities
         <Card>
             <CardHeader>
                 <CardTitle>Cross-Exchange Arbitrage Watch</CardTitle>
-                <CardDescription>Most profitable VANA/USDT opportunity found, net of fees.</CardDescription>
+                <CardDescription>Most profitable opportunity found, net of fees, across all stablecoin pairs.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-3">
                 {bestOp ? (
                     <OpportunityRow title="Best Opportunity">
                         <div className="text-right">
-                            <p className="font-semibold">{`Buy on ${bestOp.buyOn} / Sell on ${bestOp.sellOn}`}</p>
+                            <p className="font-semibold">{`Buy ${formatSymbol(bestOp.buySymbol)} on ${bestOp.buyOn}`}</p>
+                            <p className="font-semibold">{`Sell ${formatSymbol(bestOp.sellSymbol)} on ${bestOp.sellOn}`}</p>
                             {renderValue(bestOp.profit)}
                         </div>
                     </OpportunityRow>
