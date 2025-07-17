@@ -57,14 +57,13 @@ const getMexcData = async (): Promise<ExchangeData> => {
     const symbol = VANA_USDT_SYMBOL;
     const [priceData, tickerData, depthData] = await Promise.all([
         fetchAPI<{ price: string }>(`${baseUrl}/ticker/price?symbol=${symbol}`, 'MEXC'),
-        fetchAPI<any[]>(`${baseUrl}/ticker/24hr?symbol=${symbol}`, 'MEXC'),
+        fetchAPI<{ quoteVolume: string }>(`${baseUrl}/ticker/24hr?symbol=${symbol}`, 'MEXC'),
         fetchAPI<{ bids: [string, string][], asks: [string, string][] }>(`${baseUrl}/depth?symbol=${symbol}&limit=${DEPTH_LIMIT}`, 'MEXC')
     ]);
 
-    const quoteVolume = tickerData.length > 0 ? parseFloat(tickerData[0].quoteVolume) : 0;
     const bids = depthData.bids.map(([price, size]) => ({ price: parseFloat(price), size: parseFloat(size) }));
     const asks = depthData.asks.map(([price, size]) => ({ price: parseFloat(price), size: parseFloat(size) }));
-    const pairData = processPairData('MEXC', symbol, parseFloat(priceData.price), quoteVolume, bids, asks);
+    const pairData = processPairData('MEXC', symbol, parseFloat(priceData.price), parseFloat(tickerData.quoteVolume), bids, asks);
     return { exchange: 'MEXC', pairs: [pairData] };
 };
 
@@ -75,9 +74,9 @@ const getBitgetData = async (): Promise<ExchangeData> => {
     const symbol = VANA_USDT_SYMBOL;
     
     const [tickerData, depthData, volumeData] = await Promise.all([
-       fetchAPI<{ data: { lastPr: string }[] }>(`${v2BaseUrl}/tickers?symbol=${symbol}`, 'Bitget-v2'),
-       fetchAPI<{ data: { bids: [string, string][], asks: [string, string][] } }>(`${v2BaseUrl}/orderbook?symbol=${symbol}&limit=${DEPTH_LIMIT}`, 'Bitget-v2'),
-       fetchAPI<{ data: { quoteVol: string } }>(`${v1BaseUrl}/ticker?symbol=${symbol}_SPBL`, 'Bitget-v1')
+       fetchAPI<{ data: { lastPr: string }[] }>(`${v2BaseUrl}/tickers?symbol=${symbol}`, 'Bitget-v2-ticker'),
+       fetchAPI<{ data: { bids: [string, string][], asks: [string, string][] } }>(`${v2BaseUrl}/orderbook?symbol=${symbol}&limit=${DEPTH_LIMIT}`, 'Bitget-v2-depth'),
+       fetchAPI<{ data: { quoteVol: string } }>(`${v1BaseUrl}/ticker?symbol=${symbol}_SPBL`, 'Bitget-v1-volume')
     ]);
     
     const price = parseFloat(tickerData.data[0].lastPr);
@@ -168,7 +167,7 @@ export async function getDashboardData(): Promise<DashboardData> {
     if (allVanaPairs.length > 1) {
         for (let i = 0; i < allVanaPairs.length; i++) {
             for (let j = 0; j < allVanaPairs.length; j++) {
-                // Don't compare a pair with itself if it's from the same exchange
+                // Don't compare a pair with itself
                 if (i === j) continue;
 
                 const buyPair = allVanaPairs[i];
@@ -185,8 +184,10 @@ export async function getDashboardData(): Promise<DashboardData> {
                     arbitrage.push({
                         buyOn: buyPair.exchange,
                         buySymbol: buyPair.symbol,
+                        buyPrice: buyPrice,
                         sellOn: sellPair.exchange,
                         sellSymbol: sellPair.symbol,
+                        sellPrice: sellPrice,
                         profit: profit,
                     });
                 }
