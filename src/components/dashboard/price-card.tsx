@@ -7,13 +7,14 @@ interface PriceCardProps {
   symbol: string;
   price: number;
   quoteVolume: number;
+  exchange: string;
 }
 
-const PriceCard: FC<PriceCardProps> = ({ symbol, price, quoteVolume }) => {
+const PriceCard: FC<PriceCardProps> = ({ symbol, price, quoteVolume, exchange }) => {
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <CardTitle className="text-sm font-medium">{formatSymbol(symbol)}</CardTitle>
+        <CardTitle className="text-sm font-medium">{formatSymbol(symbol)} on {exchange}</CardTitle>
       </CardHeader>
       <CardContent>
         <div className="text-2xl font-bold">

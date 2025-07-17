@@ -3,8 +3,8 @@ import './globals.css';
 import { Toaster } from "@/components/ui/toaster"
 
 export const metadata: Metadata = {
-  title: 'Binance VANA Trading Insights',
-  description: 'Dashboard for Binance VANA trading metrics.',
+  title: 'VANA Trading Insights',
+  description: 'Dashboard for VANA trading metrics across multiple exchanges.',
 };
 
 export default function RootLayout({

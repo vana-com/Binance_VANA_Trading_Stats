@@ -1,43 +1,11 @@
-export type BinancePrice = {
-  symbol: string;
-  price: string;
-};
-
-export type Binance24hrTicker = {
-    symbol: string;
-    priceChange: string;
-    priceChangePercent: string;
-    weightedAvgPrice: string;
-    prevClosePrice: string;
-    lastPrice: string;
-    lastQty: string;
-    bidPrice: string;
-    askPrice: string;
-    openPrice: string;
-    highPrice: string;
-    lowPrice: string;
-    volume: string;
-    quoteVolume: string;
-    openTime: number;
-    closeTime: number;
-    firstId: number;
-    lastId: number;
-    count: number;
-}
-
-export type BinanceDepth = {
-  lastUpdateId: number;
-  bids: [string, string][]; // [price, quantity]
-  asks: [string, string][]; // [price, quantity]
-};
-
 export type OrderBookLevel = {
   price: number;
   size: number;
   total: number; // cumulative size
 };
 
-export type LiquidityData = {
+export type ExchangeData = {
+  exchange: string;
   symbol: string;
   price: number;
   quoteVolume: number;
@@ -56,6 +24,36 @@ export type LiquidityData = {
   };
 };
 
+export type CrossExchangeArbitrage = {
+  buyOn: string;
+  sellOn: string;
+  profit: number;
+}
+
+export type DashboardData = {
+  exchangeData: ExchangeData[];
+  arbitrage: CrossExchangeArbitrage[];
+};
+
+// --- Deprecated Types ---
+export type BinancePrice = {
+  symbol: string;
+  price: string;
+};
+
+export type Binance24hrTicker = {
+    symbol: string;
+    quoteVolume: string;
+}
+
+export type BinanceDepth = {
+  lastUpdateId: number;
+  bids: [string, string][]; // [price, quantity]
+  asks: [string, string][]; // [price, quantity]
+};
+
+export type LiquidityData = ExchangeData; // Alias for backward compatibility if needed anywhere
+
 export type PairArbitrage = {
   pair: [string, string];
   spread: number;
@@ -64,10 +62,4 @@ export type PairArbitrage = {
 export type TriangularArbitrage = {
   path: string[];
   profit: number;
-};
-
-export type DashboardData = {
-  liquidityData: LiquidityData[];
-  pairArbitrage: PairArbitrage[];
-  triangularArbitrage: TriangularArbitrage[];
 };

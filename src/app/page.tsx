@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { RefreshCw } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import type { DashboardData } from "@/types";
+import type { DashboardData, ExchangeData } from "@/types";
 import { refreshData } from "@/app/actions";
 import { formatSymbol } from "@/lib/utils";
 
@@ -43,12 +43,13 @@ export default function Home() {
 
   useEffect(() => {
     handleRefresh();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const renderSkeletons = () => (
     <div className="space-y-8">
-      <div className="grid gap-6 md:grid-cols-3">
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+        <Skeleton className="h-28 w-full" />
         <Skeleton className="h-28 w-full" />
         <Skeleton className="h-28 w-full" />
         <Skeleton className="h-28 w-full" />
@@ -63,9 +64,26 @@ export default function Home() {
           </CardContent>
         </Card>
         <div className="space-y-6">
-            <Skeleton className="h-40 w-full" />
-            <Skeleton className="h-64 w-full" />
+          <Skeleton className="h-40 w-full" />
+          <Skeleton className="h-64 w-full" />
         </div>
+      </div>
+    </div>
+  );
+
+  const renderExchangeTab = (exchangeData: ExchangeData) => (
+    <div className="space-y-8 mt-4">
+      <div className="grid gap-6 md:grid-cols-1">
+        <PriceCard
+          symbol={exchangeData.symbol}
+          price={exchangeData.price}
+          quoteVolume={exchangeData.quoteVolume}
+          exchange={exchangeData.exchange}
+        />
+      </div>
+      <div className="grid gap-6 md:grid-cols-2">
+         <LiquidityCard data={exchangeData} />
+         <DepthChart data={exchangeData} />
       </div>
     </div>
   );
@@ -74,7 +92,7 @@ export default function Home() {
     <main className="min-h-screen bg-background/80 p-4 md:p-8">
       <div className="max-w-7xl mx-auto space-y-8">
         <div className="flex items-center justify-between">
-          <h1 className="text-3xl font-bold text-primary font-headline">Binance VANA Trading Insights</h1>
+          <h1 className="text-3xl font-bold text-primary font-headline">VANA Trading Insights</h1>
           <div className="flex items-center space-x-4">
             {lastUpdated && !isPending && (
               <p className="text-sm text-muted-foreground">
@@ -96,46 +114,22 @@ export default function Home() {
           </Card>
         ) : data ? (
           <div className="space-y-8">
-            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-              {data.liquidityData.map((item) => (
-                <PriceCard 
-                  key={item.symbol} 
-                  symbol={item.symbol} 
-                  price={item.price} 
-                  quoteVolume={item.quoteVolume} 
-                />
-              ))}
-            </div>
+            <ArbitrageOpportunities opportunities={data.arbitrage} />
 
-            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-              {data.liquidityData.map((item) => (
-                <LiquidityCard key={item.symbol} data={item} />
-              ))}
-            </div>
-
-            <div className="grid gap-6 lg:grid-cols-3">
-              <Tabs defaultValue={data.liquidityData[0]?.symbol} className="lg:col-span-2">
-                <TabsList>
-                  {data.liquidityData.map((item) => (
-                    <TabsTrigger key={item.symbol} value={item.symbol}>
-                      {formatSymbol(item.symbol)} Depth
-                    </TabsTrigger>
-                  ))}
-                </TabsList>
-                {data.liquidityData.map((item) => (
-                  <TabsContent key={item.symbol} value={item.symbol}>
-                    <DepthChart data={item} />
-                  </TabsContent>
+            <Tabs defaultValue={data.exchangeData[0]?.exchange} className="w-full">
+              <TabsList>
+                {data.exchangeData.map((item) => (
+                  <TabsTrigger key={item.exchange} value={item.exchange}>
+                    {item.exchange}
+                  </TabsTrigger>
                 ))}
-              </Tabs>
-
-              <div className="space-y-6">
-                <ArbitrageOpportunities 
-                  pairOps={data.pairArbitrage} 
-                  triangularOps={data.triangularArbitrage} 
-                />
-              </div>
-            </div>
+              </TabsList>
+              {data.exchangeData.map((item) => (
+                <TabsContent key={item.exchange} value={item.exchange}>
+                  {renderExchangeTab(item)}
+                </TabsContent>
+              ))}
+            </Tabs>
           </div>
         ) : null}
       </div>

@@ -1,6 +1,6 @@
 "use server";
 
-import { getDashboardData } from "@/lib/binance";
+import { getDashboardData } from "@/lib/exchange";
 import type { DashboardData } from "@/types";
 
 export async function refreshData(): Promise<{

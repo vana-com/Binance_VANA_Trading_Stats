@@ -1,14 +1,13 @@
-
 "use client"
 
 import type { FC } from 'react';
 import { Bar, BarChart, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer, ReferenceArea, CartesianGrid, Label } from 'recharts';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import type { LiquidityData } from '@/types';
+import type { ExchangeData } from '@/types';
 import { formatCurrency } from '@/lib/utils';
 
 interface DepthChartProps {
-  data: LiquidityData;
+  data: ExchangeData;
 }
 
 const DepthChart: FC<DepthChartProps> = ({ data }) => {
@@ -53,7 +52,7 @@ const DepthChart: FC<DepthChartProps> = ({ data }) => {
       <CardHeader>
         <CardTitle>Order Book Depth</CardTitle>
         <CardDescription>
-            Visual representation of bids and asks volume (in VANA). The shaded area indicates the ±2% range from the mid-price used for liquidity calculations.
+            Visual representation of bids and asks volume (in VANA). The shaded area indicates the ±2% range from the mid-price.
         </CardDescription>
       </CardHeader>
       <CardContent>

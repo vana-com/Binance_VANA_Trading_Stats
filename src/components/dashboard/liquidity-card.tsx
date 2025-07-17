@@ -2,19 +2,19 @@ import type { FC } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { TrendingUp, TrendingDown, AlertTriangle } from "lucide-react";
-import type { LiquidityData } from "@/types";
+import type { ExchangeData } from "@/types";
 import { formatSymbol, formatCurrency } from '@/lib/utils';
 
 interface LiquidityCardProps {
-  data: LiquidityData;
+  data: ExchangeData;
 }
 
 const LiquidityCard: FC<LiquidityCardProps> = ({ data }) => {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>{formatSymbol(data.symbol)}</CardTitle>
-        <CardDescription>Liquidity within ±2% of mid-price</CardDescription>
+        <CardTitle>{formatSymbol(data.symbol)} Liquidity</CardTitle>
+        <CardDescription>Liquidity within ±2% of mid-price on {data.exchange}</CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="flex items-center justify-between p-3 rounded-lg bg-green-50 dark:bg-green-900/20">
