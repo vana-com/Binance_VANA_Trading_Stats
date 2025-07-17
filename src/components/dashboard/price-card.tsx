@@ -18,14 +18,17 @@ const PriceCard: FC<PriceCardProps> = ({ symbol, price, quoteVolume, exchange })
         <CardTitle className="text-sm font-medium">{formatSymbol(symbol)} on {exchange}</CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="text-2xl font-bold">
-            ${price.toLocaleString(undefined, {
-                minimumFractionDigits: 4,
-                maximumFractionDigits: 4
-            })}
+        <div className="flex items-baseline gap-2">
+            <span className="text-2xl font-bold">
+                ${price.toLocaleString(undefined, {
+                    minimumFractionDigits: 4,
+                    maximumFractionDigits: 4
+                })}
+            </span>
+            <span className="text-xs text-muted-foreground">(Last Traded)</span>
         </div>
         <p className="text-xs text-muted-foreground">
-          24h Volume: {formatCurrency(quoteVolume)} (Last Traded)
+          24h Volume: {formatCurrency(quoteVolume)}
         </p>
       </CardContent>
     </Card>
