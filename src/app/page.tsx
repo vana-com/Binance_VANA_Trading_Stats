@@ -15,6 +15,8 @@ import LiquidityCard from "@/components/dashboard/liquidity-card";
 import ArbitrageOpportunities from "@/components/dashboard/arbitrage-opportunities";
 import DepthChart from "@/components/dashboard/depth-chart";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+
 
 export default function Home() {
   const [data, setData] = useState<DashboardData | null>(null);
@@ -22,6 +24,7 @@ export default function Home() {
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
   const [isPending, startTransition] = useTransition();
   const { toast } = useToast();
+  const [autoRefreshInterval, setAutoRefreshInterval] = useState<number | null>(null);
 
   const handleRefresh = () => {
     startTransition(async () => {
@@ -45,6 +48,28 @@ export default function Home() {
     handleRefresh();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  useEffect(() => {
+    if (autoRefreshInterval === null) {
+      return;
+    }
+
+    const intervalId = setInterval(() => {
+      handleRefresh();
+    }, autoRefreshInterval);
+
+    return () => clearInterval(intervalId);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [autoRefreshInterval]);
+
+  const handleRefreshSettingChange = (value: string) => {
+    const interval = parseInt(value, 10);
+    if (!isNaN(interval) && interval > 0) {
+      setAutoRefreshInterval(interval);
+    } else {
+      setAutoRefreshInterval(null);
+    }
+  };
 
   const renderSkeletons = () => (
     <div className="space-y-8">
@@ -146,6 +171,15 @@ export default function Home() {
                 Last updated: {lastUpdated.toLocaleTimeString()}
               </p>
             )}
+             <Select onValueChange={handleRefreshSettingChange} defaultValue="0">
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="Refresh Options" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="0">Manual Refresh</SelectItem>
+                <SelectItem value="30000">Auto Refresh (30s)</SelectItem>
+              </SelectContent>
+            </Select>
             <Button onClick={handleRefresh} disabled={isPending} variant="outline">
               <RefreshCw className={`mr-2 h-4 w-4 ${isPending ? "animate-spin" : ""}`} />
               {isPending ? "Refreshing..." : "Refresh"}
