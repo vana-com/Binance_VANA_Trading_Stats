@@ -28,7 +28,7 @@ async function fetchAPI<T>(url: string, exchangeName: string): Promise<T> {
 
 // --- Binance ---
 const getBinancePairData = async (symbol: string): Promise<VanaPairData> => {
-    const baseUrl = 'https://api.binance.com/api/v3';
+    const baseUrl = 'https://cors-proxy.bitspice.workers.dev/https://api.binance.com/api/v3';
     const [priceData, tickerData, depthData] = await Promise.all([
         fetchAPI<{ price: string }>(`${baseUrl}/ticker/price?symbol=${symbol}`, `Binance-${symbol}`),
         fetchAPI<{ quoteVolume: string }>(`${baseUrl}/ticker/24hr?symbol=${symbol}`, `Binance-${symbol}`),
@@ -89,7 +89,7 @@ const getBitgetData = async (): Promise<ExchangeData> => {
 
 // --- Bybit ---
 const getBybitData = async (): Promise<ExchangeData> => {
-    const baseUrl = 'https://api.bybit.com/v5/market';
+    const baseUrl = 'https://cors-proxy.bitspice.workers.dev/https://api.bybit.com/v5/market';
     const symbol = VANA_USDT_SYMBOL;
      const [tickers, depthData] = await Promise.all([
         fetchAPI<{ result: { list: { lastPrice: string, volume24h: string }[] } }>(`${baseUrl}/tickers?category=spot&symbol=${symbol}`, 'Bybit'),
