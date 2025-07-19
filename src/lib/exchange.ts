@@ -10,7 +10,15 @@ const LOW_LIQUIDITY_THRESHOLD = 60000; // $60,000
 // Helper to handle API requests and errors
 async function fetchAPI<T>(url: string, exchangeName: string): Promise<T> {
     try {
-        const response = await fetch(url, { next: { revalidate: 0 } });
+        // Convert relative URLs to absolute URLs in server-side context
+        let fetchUrl = url;
+        if (url.startsWith('/') && typeof window === 'undefined') {
+            // We're in server-side context, convert relative URL to absolute
+            const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:9002';
+            fetchUrl = `${baseUrl}${url}`;
+        }
+        
+        const response = await fetch(fetchUrl, { next: { revalidate: 0 } });
         if (!response.ok) {
             const errorBody = await response.text();
             console.error(`Error fetching from ${exchangeName} (${response.status}): ${errorBody}`);
@@ -28,7 +36,7 @@ async function fetchAPI<T>(url: string, exchangeName: string): Promise<T> {
 
 // --- Binance ---
 const getBinancePairData = async (symbol: string): Promise<VanaPairData> => {
-    const baseUrl = 'https://cors-proxy.bitspice.workers.dev/https://api.binance.com/api/v3';
+    const baseUrl = '/api/proxy/api.binance.com/api/v3';
     const [priceData, tickerData, depthData] = await Promise.all([
         fetchAPI<{ price: string }>(`${baseUrl}/ticker/price?symbol=${symbol}`, `Binance-${symbol}`),
         fetchAPI<{ quoteVolume: string }>(`${baseUrl}/ticker/24hr?symbol=${symbol}`, `Binance-${symbol}`),
@@ -89,7 +97,7 @@ const getBitgetData = async (): Promise<ExchangeData> => {
 
 // --- Bybit ---
 const getBybitData = async (): Promise<ExchangeData> => {
-    const baseUrl = 'https://cors-proxy.bitspice.workers.dev/https://api.bybit.com/v5/market';
+    const baseUrl = '/api/proxy/api.bybit.com/v5/market';
     const symbol = VANA_USDT_SYMBOL;
      const [tickers, depthData] = await Promise.all([
         fetchAPI<{ result: { list: { lastPrice: string, volume24h: string }[] } }>(`${baseUrl}/tickers?category=spot&symbol=${symbol}`, 'Bybit'),
