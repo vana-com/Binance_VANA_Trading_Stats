@@ -3,7 +3,6 @@ import type { ExchangeData, VanaPairData, DashboardData, CrossExchangeArbitrage 
 const BINANCE_SYMBOLS = ['VANAUSDT', 'VANAUSDC', 'VANAFDUSD'];
 const VANA_USDT_SYMBOL = 'VANAUSDT';
 const EXCHANGES = ['Binance', 'MEXC', 'Bitget', 'Bybit'];
-const DEPTH_LIMIT = 20;
 const DEPTH_BAND_PERCENT = 0.02; // ±2%
 const LOW_LIQUIDITY_THRESHOLD = 60000; // $60,000
 
@@ -40,7 +39,7 @@ const getBinancePairData = async (symbol: string): Promise<VanaPairData> => {
     const [priceData, tickerData, depthData] = await Promise.all([
         fetchAPI<{ price: string }>(`${baseUrl}/ticker/price?symbol=${symbol}`, `Binance-${symbol}`),
         fetchAPI<{ quoteVolume: string }>(`${baseUrl}/ticker/24hr?symbol=${symbol}`, `Binance-${symbol}`),
-        fetchAPI<{ bids: [string, string][], asks: [string, string][] }>(`${baseUrl}/depth?symbol=${symbol}&limit=${DEPTH_LIMIT}`, `Binance-${symbol}`)
+        fetchAPI<{ bids: [string, string][], asks: [string, string][] }>(`${baseUrl}/depth?symbol=${symbol}&limit=1000`, `Binance-${symbol}`)
     ]);
     
     const bids = depthData.bids.map(([price, size]) => ({ price: parseFloat(price), size: parseFloat(size) }));
@@ -66,7 +65,7 @@ const getMexcData = async (): Promise<ExchangeData> => {
     const [priceData, tickerData, depthData] = await Promise.all([
         fetchAPI<{ price: string }>(`${baseUrl}/ticker/price?symbol=${symbol}`, 'MEXC'),
         fetchAPI<{ quoteVolume: string }>(`${baseUrl}/ticker/24hr?symbol=${symbol}`, 'MEXC'),
-        fetchAPI<{ bids: [string, string][], asks: [string, string][] }>(`${baseUrl}/depth?symbol=${symbol}&limit=${DEPTH_LIMIT}`, 'MEXC')
+        fetchAPI<{ bids: [string, string][], asks: [string, string][] }>(`${baseUrl}/depth?symbol=${symbol}&limit=1000`, 'MEXC')
     ]);
 
     const bids = depthData.bids.map(([price, size]) => ({ price: parseFloat(price), size: parseFloat(size) }));
@@ -83,7 +82,7 @@ const getBitgetData = async (): Promise<ExchangeData> => {
     
     const [tickerData, depthData, volumeData] = await Promise.all([
        fetchAPI<{ data: { lastPr: string }[] }>(`${v2BaseUrl}/tickers?symbol=${symbol}`, 'Bitget-v2-ticker'),
-       fetchAPI<{ data: { bids: [string, string][], asks: [string, string][] } }>(`${v2BaseUrl}/orderbook?symbol=${symbol}&limit=${DEPTH_LIMIT}`, 'Bitget-v2-depth'),
+       fetchAPI<{ data: { bids: [string, string][], asks: [string, string][] } }>(`${v2BaseUrl}/orderbook?symbol=${symbol}&limit=200`, 'Bitget-v2-depth'),
        fetchAPI<{ data: { quoteVol: string } }>(`${v1BaseUrl}/ticker?symbol=${symbol}_SPBL`, 'Bitget-v1-volume')
     ]);
     
@@ -101,7 +100,7 @@ const getBybitData = async (): Promise<ExchangeData> => {
     const symbol = VANA_USDT_SYMBOL;
      const [tickers, depthData] = await Promise.all([
         fetchAPI<{ result: { list: { lastPrice: string, volume24h: string }[] } }>(`${baseUrl}/tickers?category=spot&symbol=${symbol}`, 'Bybit'),
-        fetchAPI<{ result: { b: [string, string][], a: [string, string][] } }>(`${baseUrl}/orderbook?category=spot&symbol=${symbol}&limit=${DEPTH_LIMIT}`, 'Bybit')
+        fetchAPI<{ result: { b: [string, string][], a: [string, string][] } }>(`${baseUrl}/orderbook?category=spot&symbol=${symbol}&limit=200`, 'Bybit')
     ]);
 
     const price = parseFloat(tickers.result.list[0].lastPrice);
