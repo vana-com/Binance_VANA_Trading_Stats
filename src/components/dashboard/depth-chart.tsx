@@ -13,13 +13,21 @@ interface DepthChartProps {
 const DepthChart: FC<DepthChartProps> = ({ data }) => {
     const { orderBook, midPrice } = data;
 
-    const chartData = [
+    // The shaded reference area remains at ±2%
+    const refAreaLowerBound = midPrice * 0.98;
+    const refAreaUpperBound = midPrice * 1.02;
+
+    // The visible chart range is now ±5%
+    const chartLowerBound = midPrice * 0.95;
+    const chartUpperBound = midPrice * 1.05;
+
+    const fullChartData = [
         ...orderBook.bids.map(item => ({ price: item.price, bids: item.size })).reverse(),
         ...orderBook.asks.map(item => ({ price: item.price, asks: item.size })),
     ];
+    
+    const chartData = fullChartData.filter(item => item.price >= chartLowerBound && item.price <= chartUpperBound);
 
-    const lowerBound = midPrice * 0.98;
-    const upperBound = midPrice * 1.02;
 
     const CustomTooltip = ({ active, payload, label }: any) => {
       if (active && payload && payload.length) {
@@ -50,7 +58,7 @@ const DepthChart: FC<DepthChartProps> = ({ data }) => {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Order Book Depth</CardTitle>
+        <CardTitle>Order Book Depth (±5% View)</CardTitle>
         <CardDescription>
             Visual representation of bids and asks volume (in VANA). The shaded area indicates the ±2% range from the mid-price.
         </CardDescription>
@@ -68,7 +76,7 @@ const DepthChart: FC<DepthChartProps> = ({ data }) => {
               <XAxis 
                 dataKey="price" 
                 type="number"
-                domain={['dataMin', 'dataMax']}
+                domain={[chartLowerBound, chartUpperBound]}
                 tickFormatter={(value) => value.toFixed(4)}
                 stroke="hsl(var(--muted-foreground))"
                 fontSize={12}
@@ -82,7 +90,7 @@ const DepthChart: FC<DepthChartProps> = ({ data }) => {
                 </YAxis>
               <Tooltip content={<CustomTooltip />} />
               <Legend />
-              <ReferenceArea x1={lowerBound} x2={upperBound} strokeOpacity={0.3} fill="hsl(var(--accent))" fillOpacity={0.1} />
+              <ReferenceArea x1={refAreaLowerBound} x2={refAreaUpperBound} strokeOpacity={0.3} fill="hsl(var(--accent))" fillOpacity={0.1} />
               <Bar dataKey="bids" fill="#16a34a" barSize={30} />
               <Bar dataKey="asks" fill="#dc2626" barSize={30} />
             </BarChart>
